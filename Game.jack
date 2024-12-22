@@ -1,0 +1,257 @@
+class Game {
+	field FlappyBird bird;
+	field int bird_fall_cycle;
+	field int bird_default_height;
+	field Array pipes;
+	field int n_pipes;
+	field int min_dist_pipes, max_dist_pipes;
+	field int next_pipe_dist;
+	field int n_jumps;
+	field int tot_pipes;
+	
+	constructor Game new() {
+		let bird_default_height = 150;
+		let pipes = Array.new(10);
+		let n_pipes = 0;
+		let tot_pipes = 0;
+		let min_dist_pipes = 150;
+		let max_dist_pipes = 300;
+		let next_pipe_dist = 50;
+		let n_jumps = 1;
+		
+		return this;
+	}
+	
+	method void displayTutorial () {
+		do Output.moveCursor(0, 0);
+		do Output.printString("Welcome to 16-bit Flappy Bird.");
+		do Output.println();
+		do Output.printString("To jump, press the space bar.");
+		do Output.println();
+		do Output.printString("To quit, press the 'esc' key.");
+		do Output.println();
+		do Output.printString("To win, stay alive.");
+	
+		return;
+	}
+	
+	method void displayRestart () {
+		do Output.moveCursor(10, 15);
+		do Output.printString("To start new game, press anykey.");
+	
+		return;
+	}
+	
+	method void run() {
+		var char key;
+		var char last_key;
+		
+		do init();
+		do Random.seed();
+		let last_key = 32;
+		while (~(key = 140)) {
+			if ((key = 32) & ~(last_key = 32)) {
+				let n_jumps = n_jumps + 1;
+				do bird.jump();
+			} else {
+				do updateBirdFallCycle();
+			}
+			
+			if (offScreen()) {
+				do displayRestart();
+				do Random.seed();
+				do init();
+			} else {
+				if (findCollision()) {
+					do displayRestart();
+					do Random.seed();
+					do init();
+				}
+			}
+			
+			do draw();
+			
+			let last_key = key;
+			let key = Keyboard.keyPressed();
+			do Sys.wait(10);
+		}
+		
+		return;
+	}
+	
+	method void init() {
+		var Pipe pipe;
+		var int i;
+		let i = 0;
+		
+		while (i < n_pipes) {
+			let pipe = pipes[i];
+			do pipe.dispose();
+			let i = i + 1;
+		}
+		
+		do Screen.clearScreen();
+		do displayTutorial();
+		
+		let bird = FlappyBird.new(bird_default_height);
+		
+		let n_pipes = 0;
+		let tot_pipes = 0;
+		let bird_fall_cycle = 1;
+		let next_pipe_dist = 50;
+		
+		return;
+	}
+	
+	method void updateBirdFallCycle() {
+		if (bird_fall_cycle = 5) {
+			do bird.fall();
+			let bird_fall_cycle = 1;
+		} else {
+			let bird_fall_cycle = bird_fall_cycle + 1;
+		}
+		
+		return;
+	}
+	
+	method void draw() {
+		var Pipe pipe;
+		
+		do shiftPipesLeft();
+		do disposeUnseenPipe();
+		do createPipe();
+		
+		do bird.draw();
+		
+		return;
+	}
+	
+	method void shiftPipesLeft() {
+		var Pipe pipe;
+		var int i;
+		
+		let i = 0;
+		while(i < n_pipes) {
+			let pipe = pipes[i];
+			do pipe.draw();
+			do pipe.shiftLeft();
+			let i = i + 1;
+		}
+		
+		return;
+	}
+	
+	method void disposeUnseenPipe() {
+		var Pipe pipe;
+		var int i;
+		
+		if (n_pipes = 0) {
+			return;
+		}
+		
+		let pipe = pipes[0];
+		
+		if (pipe.getX() < 1) {
+			do pipe.dispose();
+			let n_pipes = n_pipes - 1;
+			let i = 0;
+			while (i < n_pipes) {
+				let pipes[i] = pipes[i+1];
+				let i = i + 1;
+			}
+			
+			if (tot_pipes / 5 = 0) {
+				let max_dist_pipes = max_dist_pipes - 5;
+			}
+			if (tot_pipes / 10 = 0) {
+				let min_dist_pipes = min_dist_pipes - 5;
+			}
+		}
+		
+		return;
+	}
+	
+	method void createPipe() {
+		var Pipe pipe;
+		
+		if (n_pipes > 9) {
+			return;
+		}
+		
+		if (next_pipe_dist < 1) {
+			let pipes[n_pipes] = Pipe.new();
+			let n_pipes = n_pipes + 1;
+			let tot_pipes = tot_pipes + 1;
+			let next_pipe_dist = getNextPipeDist();
+		} else {
+			// let next_pipe_dist = next_pipe_dist - pipe.getSpeed();
+			let next_pipe_dist = next_pipe_dist - 1;
+		}
+		
+		return;
+	}
+	
+	method boolean findCollision() {
+		var Pipe pipe;
+		var int i;
+		
+		let i = 0;
+		while (i < n_pipes) {
+			let pipe = pipes[i];
+			if (collides(pipe)) {
+				return true;
+			}
+			let i = i + 1;
+		}
+		
+		return false;
+	}
+	
+	method boolean offScreen() {
+		if ((bird.getY() + bird.getHeight()) = 255) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	method boolean collides(Pipe pipe) {
+		if (pipe.getX() > (bird.getX() + bird.getWidth() + 1)) {
+			return false;
+		}
+		if ((pipe.getX() + pipe.getWidth()) < bird.getX()) {
+			return false;
+		}
+		if (pipe.getGapTop() > bird.getY()) {
+			return true;
+		}
+		if (pipe.getGapBottom() < (bird.getY() + bird.getHeight())) {
+			return true;
+		}
+
+		return false;
+	}
+	
+	method int getNextPipeDist() {
+		return Random.randRange(max_dist_pipes - min_dist_pipes) + min_dist_pipes;
+	}
+	
+	method void dispose() {
+		var Pipe pipe;
+		var int i;
+		
+		let i = 0;
+		while (i < n_pipes) {
+			let pipe = pipes[i];
+			do pipe.dispose();
+			let i = i + 1;
+		}
+		
+		do bird.dispose();
+		
+		do Memory.deAlloc(this);
+		
+		return;
+	}
+}
+	

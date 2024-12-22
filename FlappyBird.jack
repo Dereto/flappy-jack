@@ -1,0 +1,106 @@
+class FlappyBird {
+	field int x, y;
+	field int width, height;
+	field Array bird_sprite;
+	
+	constructor FlappyBird new(int default_height) {
+		let y = default_height;
+		let x = 160;
+		let width = 16;
+		let height = 12;
+		
+		do build_sprite();
+		
+		do draw();
+		return this;
+	}
+	
+	method void jump() {
+		do erase();
+		if (y > 30) {
+			let y = y - 30;
+		} else {
+			let y = 0;
+		}
+		
+		return;
+	}
+	
+	method void fall() {
+		do erase();
+		if (y < (255 - height - 5)) {
+			let y = y + 5;
+		} else {
+			let y = 255 - height;
+		}
+		
+		return;
+	}
+	
+	method void erase() {
+		do Screen.setColor(false);
+		do Screen.drawRectangle(x, y, x + width, y + height);
+		
+		return;
+	}
+	
+	method void build_sprite() {
+		let bird_sprite = Array.new(12);
+		
+		let bird_sprite[0] = 4032;
+		let bird_sprite[1] = 4656;
+		let bird_sprite[2] = 8456;
+		let bird_sprite[3] = 20740;
+		let bird_sprite[4] = 20740;
+		let bird_sprite[5] = 16958;
+		let bird_sprite[6] = -959;
+		let bird_sprite[7] = -32191;
+		let bird_sprite[8] = -706;
+		let bird_sprite[9] = -32252;
+		let bird_sprite[10] = 31768;
+		let bird_sprite[11] = 992;
+		
+		return;
+	}
+	
+	method void draw() {
+		var int memAddress;
+		let memAddress = (16384 + (y * 32) + (x/16));
+
+		do Memory.poke(memAddress+0, bird_sprite[0]);
+		do Memory.poke(memAddress+32, bird_sprite[1]);
+		do Memory.poke(memAddress+64, bird_sprite[2]);
+		do Memory.poke(memAddress+96, bird_sprite[3]);
+		do Memory.poke(memAddress+128, bird_sprite[4]);
+		do Memory.poke(memAddress+160, bird_sprite[5]);
+		do Memory.poke(memAddress+192, bird_sprite[6]);
+		do Memory.poke(memAddress+224, bird_sprite[7]);
+		do Memory.poke(memAddress+256, bird_sprite[8]);
+		do Memory.poke(memAddress+288, bird_sprite[9]);
+		do Memory.poke(memAddress+320, bird_sprite[10]);
+		do Memory.poke(memAddress+352, bird_sprite[11]);
+
+		return;
+	}
+	
+	method int getX() {
+		return x;
+	}
+	
+	method int getY() {
+		return y;
+	}
+	
+	method int getWidth() {
+		return width;
+	}
+	
+	method int getHeight() {
+		return height;
+	}
+	
+	method void dispose() {
+		do Memory.deAlloc(this);
+		return;
+	}
+}
